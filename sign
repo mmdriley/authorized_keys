@@ -1,0 +1,12 @@
+#!/bin/bash
+
+set -o nounset -o errexit -o pipefail
+
+file_to_sign=${1:-authorized_keys}
+private_key_file=${PRIVATE_KEY_FILE:-private_key.pem}
+public_key_file=${PUBLIC_KEY_FILE:=public_key.pem}
+
+signature_file=${file_to_sign}.sig
+
+openssl dgst -sha256 -sign private_key.pem -out "${signature_file}" "${file_to_sign}"
+openssl dgst -sha256 -verify public_key.pem -signature "${signature_file}" "${file_to_sign}"
