@@ -8,5 +8,3 @@ openssl ecparam -name P-256 -noout -genkey -out private_key.pem
 
 # Read private key, write public key.
 openssl pkey -in private_key.pem -pubout -out public_key.pem
-
-cat *.pem
