@@ -1,0 +1,57 @@
+#!/bin/bash
+
+set -o nounset -o errexit -o pipefail
+
+ROOT_URL='https://gist.githubusercontent.com/mmdriley/147cb1ce4301833f3824f066d8a63833/raw/'
+PUBLIC_KEY='
+-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAERxQe6zDeJ9Ck8nKWlJa94Grw2bON
+VCS+kTLilkSwnViYtMhNt8e7DSK4axbwZejb6H+qagsg2TsiZo2I+ZhEjg==
+-----END PUBLIC KEY-----
+'
+
+# Make sure no one else can write to the files we create. That avoids a
+# time-of-check/time-of-use bug where we check the signature on the file but
+# it changes before we copy it to stdout.
+umask 077
+
+# Create the download directory and delete it on exit.
+download_dir=$(mktemp -d)
+cd "${download_dir}"
+
+cleanup() {
+  rm -rf -- "${download_dir}"
+}
+trap cleanup EXIT
+
+
+download_and_verify() {
+  curl \
+    --fail --fail-early \
+    --max-time 20 \
+    "${ROOT_URL}/authorized_keys" -o "authorized_keys.unverified" \
+    "${ROOT_URL}/authorized_keys.sig" -o "authorized_keys.sig"
+
+  openssl dgst \
+    -sha256 \
+    -verify <(echo "${PUBLIC_KEY}") \
+    -signature "authorized_keys.sig" \
+    "authorized_keys.unverified" && {
+    # Succeeded. Mark file as verified.
+    mv "authorized_keys.unverified" "authorized_keys.signature-checked"
+  } || {
+    # Failed. Eagerly delete bad files.
+    rm "authorized_keys.unverified" "authorized_keys.sig"
+  }
+}
+
+# Avoid printing anything unintended to stdout.
+1>&2 download_and_verify || true
+
+if [[ -s "authorized_keys.signature-checked" ]]; then
+  echo "# Signature verified"
+  echo
+  cat "authorized_keys.signature-checked"
+else
+  echo "# Download or signature verification failed"
+fi
