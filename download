@@ -27,7 +27,7 @@ trap cleanup EXIT
 
 download_and_verify() {
   curl \
-    --fail --fail-early \
+    --fail \
     --max-time 20 \
     "${ROOT_URL}/authorized_keys" -o "authorized_keys.unverified" \
     "${ROOT_URL}/authorized_keys.sig" -o "authorized_keys.sig"
