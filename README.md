@@ -60,7 +60,7 @@
     AuthorizedKeysCommandUser authorized_keys_command_user
     ```
 
-    _(Keep `sshd_config` open for the next step.)_
+    _(Consider keeping `sshd_config` open for the next step.)_
 
 ## Configure `sshd` to use `publickey` authentication
 
@@ -72,4 +72,18 @@ ChallengeResponseAuthentication no
 PasswordAuthentication no
 
 PermitRootLogin prohibit-password
+```
+
+## Read new `sshd` configuration
+
+Make sure to keep an `ssh` session open in case `sshd` can't read the new configuration.
+
+```bash
+# Restart sshd and read sshd_config
+service ssh restart
+
+# Check that sshd_config was read successfully
+service ssh status
+
+# ... also test logging in as ${NEW_USER}!
 ```
