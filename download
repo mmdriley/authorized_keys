@@ -10,10 +10,12 @@ VCS+kTLilkSwnViYtMhNt8e7DSK4axbwZejb6H+qagsg2TsiZo2I+ZhEjg==
 -----END PUBLIC KEY-----
 '
 
+
 # Make sure no one else can write to the files we create. That avoids a
 # time-of-check/time-of-use bug where we check the signature on the file but
 # it changes before we copy it to stdout.
 umask 077
+
 
 # Create the download directory and delete it on exit.
 download_dir=$(mktemp -d)
@@ -25,6 +27,8 @@ cleanup() {
 trap cleanup EXIT
 
 
+# Define a function, then call it redirecting stdout to stderr.
+# That makes it less likely we write something unintended to stdout.
 download_and_verify() {
   curl \
     --fail \
@@ -44,9 +48,8 @@ download_and_verify() {
     rm "authorized_keys.unverified" "authorized_keys.sig"
   }
 }
-
-# Avoid printing anything unintended to stdout.
 1>&2 download_and_verify || true
+
 
 if [[ -s "authorized_keys.signature-checked" ]]; then
   echo "# Signature verified"
