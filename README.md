@@ -1,3 +1,13 @@
+# An approach to SSH access management
+
+This repository provides a template for managing SSH access from multiple clients to multiple servers.
+
+This approach targets small numbers of clients or servers where it's preferable not to run and maintain a separate service to broker access.
+
+## Status
+
+Complete but poorly documented.
+
 # SSH bringup
 
 ## Create a non-root user with passwordless `sudo`
