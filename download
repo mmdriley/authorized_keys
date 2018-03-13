@@ -26,10 +26,11 @@ cleanup() {
 }
 trap cleanup EXIT
 
+# Run commands in a subshell with stdout redirected to stderr in case we
+# accidentally print something that could be interpreted as authorized_keys.
+(
+  exec 1>&2
 
-# Define a function, then call it redirecting stdout to stderr.
-# That makes it less likely we write something unintended to stdout.
-download_and_verify() {
   curl \
     --fail \
     --max-time 20 \
@@ -47,9 +48,7 @@ download_and_verify() {
     # Failed. Eagerly delete bad files.
     rm "authorized_keys.unverified" "authorized_keys.sig"
   }
-}
-1>&2 download_and_verify || true
-
+) || true
 
 if [[ -s "authorized_keys.signature-checked" ]]; then
   echo "# Signature verified"
