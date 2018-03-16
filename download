@@ -2,11 +2,11 @@
 
 set -o nounset -o errexit -o pipefail
 
-ROOT_URL='https://gist.githubusercontent.com/mmdriley/147cb1ce4301833f3824f066d8a63833/raw/'
+ROOT_URL='https://raw.githubusercontent.com/mmdriley/authorized_keys/master'
 PUBLIC_KEY='
 -----BEGIN PUBLIC KEY-----
-MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAERxQe6zDeJ9Ck8nKWlJa94Grw2bON
-VCS+kTLilkSwnViYtMhNt8e7DSK4axbwZejb6H+qagsg2TsiZo2I+ZhEjg==
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEBLXSQ3oSQWKp6WCk4612loWrR6By
+l6fMl1KOys+6izvet7qslWPcIdbWYk3PSAJMzNJYmneqkcmVe+YlyTmZSw==
 -----END PUBLIC KEY-----
 '
 
