@@ -8,7 +8,7 @@
 # Example:
 #   7we72-to5c2-0xgh6-dswvh-v5yvq
 #
-# log_2((10+26-2)^25) is about 127.18.
+# log_2((10+26-2)^25) is a little over 127.
 
 # Use `echo` for newline.
 # Start with `base64` because `tr` doesn't like getting invalid UTF8.
