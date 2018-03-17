@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# Generate a passphrase with about 128 bits of entropy.
+# The passphrase includes 25 characters drawn from numbers and lowercase
+# letters, omitting the number 1 and lowercase L to avoid confusion. The
+# passphrase is split into five groups of five to make it easier to read.
+#
+# Example:
+#   7we72-to5c2-0xgh6-dswvh-v5yvq
+#
+# log_2((10+26-2)^25) is about 127.18.
+
+# Use `echo` for newline.
+# Start with `base64` because `tr` doesn't like getting invalid UTF8.
+echo $(base64 /dev/urandom | tr -cd 'a-km-z02-9' | head -c25 | fold -w5 | tr '\n' -)
