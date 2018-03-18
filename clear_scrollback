@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Clear terminal
+# Clear terminal.
 clear
 
-# See "CSI n J" at https://en.wikipedia.org/wiki/ANSI_escape_code#CSI_sequences
-# n = 3
+# Clear saved lines / scrollback. Use "CSI n J" with n=3 as described at:
+# https://en.wikipedia.org/wiki/ANSI_escape_code#CSI_sequences
 printf '\e[3J'
