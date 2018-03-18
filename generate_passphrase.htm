@@ -1,0 +1,68 @@
+<!doctype html>
+<html>
+  <head>
+    <title>passphrase</title>
+    <style>
+      div#passphrase {
+        font: bold 3em monospace;
+      }
+    </style>
+  </head>
+
+  <body>
+    <script>
+      function base64(array) {
+        return btoa(String.fromCharCode(...array));
+      }
+
+      // Keep a-z0-9 except for number 1 and lowercase L.
+      const passphraseChars = `abcdefghijkmnopqrstuvwxyz023456789`
+      console.assert(passphraseChars.length == 34);
+
+      // Only base64 chars.
+      console.assert(passphraseChars.match(/^[a-zA-Z0-9+/]*$/));
+
+      // Ensure no duplicates so we can rely on length.
+      console.assert(new Set(passphraseChars).size == passphraseChars.length);
+
+      const removeChars = new RegExp(`[^${passphraseChars}]`, `g`);
+
+      function passphrase(lengthInChars) {
+        // Scale up lengthInChars based on how much of what we generate we're likely to keep.
+        // Multiply by 3 *after* rounding to avoid base64 characters with some zero bits.
+        // Multiplying by 3 also makes it much less likely we need to retry. Randomness is cheap.
+        const generateBytes = 3 * Math.ceil(lengthInChars * (64 / passphraseChars.length));
+        const randomBytes = new Uint8Array(generateBytes);
+
+        while (true) {
+          crypto.getRandomValues(randomBytes);
+          const candidate = base64(randomBytes).replace(removeChars, ``);
+
+          if (candidate.length >= lengthInChars) {
+            // We got enough "good" characters to return a passphrase.
+            return candidate.substr(0, lengthInChars);
+          }
+
+          // We got unlucky, keep trying.
+          console.log(retry);
+        }
+      }
+
+      // Break `str` with `sep` every `n` characters.
+      function chunk(str, n, sep) {
+        // Use a lookahead assertion `(?=.)` to avoid adding a separator if nothing follows.
+        let re = new RegExp(`(.{${n}})(?=.)`, `g`);
+        return str.replace(re, `$1${sep}`);
+      }
+
+      const passphraseLength = 25;
+      console.assert(Math.log2(passphraseChars.length) * passphraseLength > 127); // 127.186
+
+      let div = document.createElement(`div`);
+      div.id = `passphrase`;
+      div.textContent = chunk(passphrase(passphraseLength), 5, `-`);
+
+      document.body.appendChild(div);
+    </script>
+  </body>
+</html>
