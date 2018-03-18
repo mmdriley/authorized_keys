@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# Clear terminal
+clear
+
+# See "CSI n J" at https://en.wikipedia.org/wiki/ANSI_escape_code#CSI_sequences
+# n = 3
+printf '\e[3J'
