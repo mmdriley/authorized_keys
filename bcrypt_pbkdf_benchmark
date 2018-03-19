@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# https://man.openbsd.org/bcrypt_pbkdf.3
+
 temp_dir=$(mktemp -d)
 cd "${temp_dir}"
 
