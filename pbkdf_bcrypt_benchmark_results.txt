@@ -1,0 +1,10 @@
+certainly not guaranteed to be representative
+
+model name      : Intel(R) Core(TM) i3-4150T CPU @ 3.00GHz
+  16 0.168
+  32 0.292
+  64 0.584
+ 128 1.172
+ 256 2.340
+ 512 4.676
+1024 9.352
