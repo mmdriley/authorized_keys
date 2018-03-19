@@ -1,0 +1,20 @@
+#!/bin/bash
+
+temp_dir=$(mktemp -d)
+cd "${temp_dir}"
+
+cleanup() {
+    rm -rf -- "${temp_dir}"
+}
+trap cleanup EXIT
+
+TIMEFORMAT='%U'
+
+[[ -f "/proc/cpuinfo" ]] && grep '^model name' /proc/cpuinfo -m 1
+(which sysctl >/dev/null) && sysctl -n machdep.cpu.brand_string
+
+for i in {0..6}; do
+  rounds=$((16*(2**i)))
+  time_in_seconds=$(exec 2>&1 >/dev/null; time ssh-keygen -t ed25519 -f $rounds -N 'passphrase' -a $rounds)
+  printf '%4d %s\n' $rounds $time_in_seconds
+done
