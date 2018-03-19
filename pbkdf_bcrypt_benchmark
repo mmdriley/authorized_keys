@@ -10,8 +10,10 @@ trap cleanup EXIT
 
 TIMEFORMAT='%U'
 
-[[ -f "/proc/cpuinfo" ]] && grep '^model name' /proc/cpuinfo -m 1
-(which sysctl >/dev/null) && sysctl -n machdep.cpu.brand_string
+case "$(uname)" in
+  Linux) grep '^model name' /proc/cpuinfo -m 1 ;;
+  Darwin) sysctl -n machdep.cpu.brand_string ;;
+esac
 
 for i in {0..6}; do
   rounds=$((16*(2**i)))
