@@ -64,7 +64,7 @@ Probably most appropriate in a deployment with a small numbers of users and serv
 
     In `download_authorized_keys`, replace `GOOGLE_DOC_ID` with the ID of the document you created. For example, if the document URL is:
     ```
-    https://docs.google.com/document/d/4oVJ6K5g2LOhqlgrblto5WYTasVebsPJGbsHSmVXNyQe/edit`
+    https://docs.google.com/document/d/4oVJ6K5g2LOhqlgrblto5WYTasVebsPJGbsHSmVXNyQe/edit
     ```
 
     then set `GOOGLE_DOC_ID` as:
