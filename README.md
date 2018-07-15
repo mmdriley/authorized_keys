@@ -1,16 +1,30 @@
-# An approach to SSH access management
+# Manage SSH with Google Docs
 
-This repository provides a template for managing SSH access from multiple clients to multiple servers.
+Steps to use a Google Doc as your `authorized_keys` file across some servers.
 
-This approach targets small numbers of clients or servers where it's preferable not to run and maintain a separate service to broker access.
+Probably most appropriate in a deployment with a small numbers of users and servers.
 
-## Status
+## One-time setup
 
-Complete but poorly documented.
+### Create the `authorized_keys` Google Doc
 
-# SSH bringup
+1.  Create a new [Google Doc](https://docs.google.com/document).
 
-## Create a non-root user with passwordless `sudo`
+2.  Add the `authorized_keys` contents, e.g.:
+
+    ```
+    # computer1
+    ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC1LQMZJkoWNJrai7qJ6ZI7yqXTZijQd9E/onI01dR2bA1Mvrmbz/BL0tJIrwNxVpNCUn9Os4svPy9ITIrkKg6rlxHMwW1D9oEc7grrFaM2jvhaF/GrMKuD1gC+kRYW5eaZqdcP7njRO8+ciwVImb3sw+mSAvSKUcIvHby8yGEVU2I+p3I35YRSSN1KH+BFPQRE/jd0U4Qm1a5ZI5LWL6cUbFLv5OzHp8nun+BNQStxMe6bjHcXJRtH+8LxXs5meTTo/MOUSUgPIFSYlUF1ujHJio02NXJatlWn6t1IbHMm86JAc6uSOvQNUmEB0PbUdAbV8QCS9k84xz7AzpAJC/U3
+
+    # computer2
+    ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAGDUSry9MFpslgCZhingWShnvszp9Aw7KuDlutVi+bl
+    ```
+
+3. Change the sharing settings for the document so "anyone with the link can **view**".
+
+## Per-machine bringup
+
+### Create a non-root user with passwordless `sudo`
 
 1.  Create the passwordless `sudo` group
 
@@ -35,7 +49,7 @@ Complete but poorly documented.
     usermod "${NEW_USER}" --append --groups sudo-nopasswd
     ```
 
-## Install `authorized_keys` script
+### Install `authorized_keys` script
 
 1.  Download the script
 
@@ -46,14 +60,26 @@ Complete but poorly documented.
     chmod 755 /usr/local/download_authorized_keys
     ```
 
-2.  Create a user to run the script
+2.  Configure the script
+
+    In `download_authorized_keys`, replace `GOOGLE_DOC_ID` with the ID of the document you created. For example, if the document URL is:
+    ```
+    https://docs.google.com/document/d/4oVJ6K5g2LOhqlgrblto5WYTasVebsPJGbsHSmVXNyQe/edit`
+    ```
+
+    then set `GOOGLE_DOC_ID` as:
+    ```
+    GOOGLE_DOC_ID=4oVJ6K5g2LOhqlgrblto5WYTasVebsPJGbsHSmVXNyQe
+    ```
+
+3.  Create a user to run the script
 
     ```bash
     # Add a system user (and associated group) with no login privilege.
     useradd authorized_keys_command_user --system --shell /bin/false --user-group
     ```
 
-3.  Configure `sshd` to use the script
+4.  Configure `sshd` to use the script
 
     Add to `/etc/ssh/sshd_config`:
 
@@ -72,7 +98,7 @@ Complete but poorly documented.
 
     _(Consider keeping `sshd_config` open for the next step.)_
 
-## Configure `sshd` to use `publickey` authentication
+### Configure `sshd` to use `publickey` authentication
 
 Add to `/etc/ssh/sshd_config`:
 
@@ -84,7 +110,7 @@ PasswordAuthentication no
 PermitRootLogin prohibit-password
 ```
 
-## Read new `sshd` configuration
+### Read new `sshd` configuration
 
 Make sure to keep an `ssh` session open in case `sshd` can't read the new configuration.
 
@@ -98,84 +124,11 @@ service ssh status
 # ... also test logging in as ${NEW_USER}.
 ```
 
-## Other ideas
+## Belt and suspenders
 
-Assuming we restrict ourselves to publickey authentication, maintaining SSH access breaks down into a few inter-related parts:
-1.  What goes in `authorized_keys`
-2.  When and how to update `authorized_keys` on servers
-3.  When and how to update client keys
+If you rely entirely on `AuthorizedKeysCommand` to download `authorized_keys` from Google Docs, you might lose SSH access to your hosts if:
+- you lose access to your Google account
+- Google is down
+- Google changes the URL scheme for exporting documents as text
 
-Consider the most straightforward approach to SSH access: one keypair, stored in a file on each client and accepted by each server. If an attacker compromises _any_ client, they get access to all servers forever. To repair the breach, all clients and all servers need to be updated.
-
-continued...
-
-
-These are the scenarios we want to make easy:
-- Provision a new server
-- Grant client access
-- Revoke client access (e.g. if compromised)
-
-Bonus:
-- Grant access to diverse clients: OpenSSH, PuTTY, random iOS apps
-
-The most straightforward approach is one keypair, copied to each client and listed in `authenticated_keys` on each server. Setting up a new client or server is really easy, but revoking access requires touching every client and server.
-
-Add server - O(1)
-Add client - O(1)
-Remove client - O(C + S)
-
-Other considerations:
-* We can't use devices that generate the keypair internally and only share the public key.
-* The key can be protected by a passphrase, but that doesn't protect against brute-force attacks or keylogging.
-* It's not easy to securely transport a new key to all clients.
-
-
-A slightly more intricate approach uses one key per client, with all client keys listed in `authenticated_keys` on each server. Setting up a new server is still easy. Revoking a client still requires touching every server, but only one client. But now setting up a new client *also* requires touching every server.
-
-Add server - O(1)
-Add client - O(S)
-Remove client - O(S)
-
-
-In order to avoid updating `authorized_keys` for every new client, we can use OpenSSH certificates. We create a certificate authority (CA) key and sign client keys with it. Servers use `TrustedUserCAKeys` or a `@cert-authority` line in `authorized_keys` to trust the CA key.
-
-If a client is compromised, its key must be revoked at all servers. SSH keys can be revoked in `sshd_config` (`RevokedKeys`) or `authorized_keys` (by listing the key explicitly with `from="!*"`). This must be done at all servers.
-
-Alternatively, we can set a valid interval for the OpenSSH certificates. Assuming certificates have a short enough expiration, a missing or compromised client doesn't require a response. That said, this depends on a service (like [Netflix's BLESS](https://github.com/Netflix/bless) or [the cloudtools `ssh-cert-authority`](https://github.com/cloudtools/ssh-cert-authority)) to respond to signing requests. That service must hold the CA key online. If that service is compromised, and the CA key is extracted, then all servers must be updated.
-
-Add server - O(1)
-Add client - O(1)
-Remove client:
-- _with expiration_: O(1)
-- _without expiration_: O(S)
-Roll certificate authority key:
-- _with expiration_: O(S)
-- _without expiration_: O(C + S)
-
-Other considerations:
-- Without the signing service, this provides similar security to one key shared by all clients.
-- If using a signing service, that service needs to be kept available and secure. It needs to implement its own authentication. And it needs to have a revocation list for client keys that are compromised and should no longer have certificates issued.
-- It's a little weird that the signing service has permanent access to a key that entitles it to connect to any server, even though it should never make such a connection. There are some ways to mitigate this and require the server to cooperate with a previously-authorized client:
-  - We can encrypt the CA key to _yet another_ key (symmetric or asymmetric) held by the service, then give the encrypted CA key to clients. Clients will send the encrypted CA key with requests. If the server authorizes the request, it will unseal and instrument the key and then quickly forget it until the next request.
-  - We can split the signing key between clients and the service. Then a client and the service need to _cooperate_ in order to create a valid OpenSSH certificate. If the signing key is RSA, we can use additive or multiplicative splitting. If it's an ECDH key, there are trickier (and chattier) solutions involving homomorphic encryption. Each client should have a different keyshare, though, so this demands _another_ service with access to the CA key to create keyshares when provisioning clients. Maybe we could pre-create a lot of keyshares and store them somewhere?
-  With each of these solutions, rotating the CA key now requires touching every client.
-
-
-### Configuration management
-
-Distribute `authorized_keys` with Chef, Ansible, Puppet, Salt, etc.
-
-### OpenSSH certificates and certificate authorities
-
-[Reference](https://blog.habets.se/2011/07/OpenSSH-certificates.html)
-
-These would use `@cert-authority` lines in `authorized_keys`.
-
-*   [Netflix BLESS](https://github.com/Netflix/bless)
-*   [Uber's SSH CA](https://medium.com/uber-security-privacy/introducing-the-uber-ssh-certificate-authority-4f840839c5cc)
-*   [Cloudtools `ssh-ca`](https://github.com/cloudtools/ssh-ca)
-
-These are specific to OpenSSH, so they won't work with other clients like PuTTY.
-
-### RSA key splitting
-
+To account for this, you may want to create a "fallback" key and put it in `authorized_keys` on each host. This key should probably stay offline or be rooted at a Yubikey since it will be so hard to revoke.

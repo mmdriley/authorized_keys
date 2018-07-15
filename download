@@ -2,58 +2,7 @@
 
 set -o nounset -o errexit -o pipefail
 
-ROOT_URL='https://raw.githubusercontent.com/mmdriley/authorized_keys/master'
-PUBLIC_KEY='
------BEGIN PUBLIC KEY-----
-MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEBLXSQ3oSQWKp6WCk4612loWrR6By
-l6fMl1KOys+6izvet7qslWPcIdbWYk3PSAJMzNJYmneqkcmVe+YlyTmZSw==
------END PUBLIC KEY-----
-'
+# Replace with the ID of your authorized_keys Google Doc.
+GOOGLE_DOC_ID=4oVJ6K5g2LOhqlgrblto5WYTasVebsPJGbsHSmVXNyQe
 
-
-# Make sure no one else can write to the files we create. That avoids a
-# time-of-check/time-of-use bug where we check the signature on the file but
-# it changes before we copy it to stdout.
-umask 077
-
-
-# Create the download directory and delete it on exit.
-download_dir=$(mktemp -d)
-cd "${download_dir}"
-
-cleanup() {
-  rm -rf -- "${download_dir}"
-}
-trap cleanup EXIT
-
-# Run commands in a subshell with stdout redirected to stderr in case we
-# accidentally print something that could be interpreted as authorized_keys.
-(
-  exec 1>&2
-
-  curl \
-    --fail \
-    --max-time 20 \
-    "${ROOT_URL}/authorized_keys" -o "authorized_keys.unverified" \
-    "${ROOT_URL}/authorized_keys.sig" -o "authorized_keys.sig"
-
-  openssl dgst \
-    -sha256 \
-    -verify <(echo "${PUBLIC_KEY}") \
-    -signature "authorized_keys.sig" \
-    "authorized_keys.unverified" && {
-    # Succeeded. Mark file as verified.
-    mv "authorized_keys.unverified" "authorized_keys.signature-checked"
-  } || {
-    # Failed. Eagerly delete bad files.
-    rm "authorized_keys.unverified" "authorized_keys.sig"
-  }
-) || true
-
-if [[ -s "authorized_keys.signature-checked" ]]; then
-  echo "# Signature verified"
-  echo
-  cat "authorized_keys.signature-checked"
-else
-  echo "# Download or signature verification failed"
-fi
+curl --silent --fail "https://docs.google.com/document/export?id=${GOOGLE_DOC_ID}&format=txt"
