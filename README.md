@@ -124,6 +124,14 @@ service ssh status
 # ... also test logging in as ${NEW_USER}.
 ```
 
+### Debugging
+
+If `AuthorizedKeysCommand` is not respected, check permissions on `/usr/local` and perhaps fix them with `chmod 755 /usr/local`. If the permissions are wrong, you'll see lines like this in `/var/log/auth.log`:
+
+```
+Jul 29 08:06:31 hostname sshd[11457]: error: Unsafe AuthorizedKeysCommand "/usr/local/download_authorized_keys": bad ownership or modes for directory /usr/local
+```
+
 ## Belt and suspenders
 
 If you rely entirely on `AuthorizedKeysCommand` to download `authorized_keys` from Google Docs, you might lose SSH access to your hosts if:
