@@ -135,7 +135,8 @@ Jul 29 08:06:31 hostname sshd[11457]: error: Unsafe AuthorizedKeysCommand "/usr/
 ## Belt and suspenders
 
 If you rely entirely on `AuthorizedKeysCommand` to download `authorized_keys` from Google Docs, you might lose SSH access to your hosts if:
-- you lose access to your Google account
+- You lose access to your Google account
+- The document is deleted
 - Google is down
 - Google changes the URL scheme for exporting documents as text
 
