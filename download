@@ -5,4 +5,5 @@ set -o nounset -o errexit -o pipefail
 # Replace with the ID of your authorized_keys Google Doc.
 GOOGLE_DOC_ID=4oVJ6K5g2LOhqlgrblto5WYTasVebsPJGbsHSmVXNyQe
 
-curl --silent --fail "https://docs.google.com/document/export?id=${GOOGLE_DOC_ID}&format=txt"
+# As of 2020-08-08, `/export` now redirects through googleusercontent.com.
+curl --silent --fail --location "https://docs.google.com/document/export?id=${GOOGLE_DOC_ID}&format=txt"
