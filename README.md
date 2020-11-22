@@ -8,7 +8,7 @@ Probably most appropriate in a deployment with a small numbers of users and serv
 
 ### Create the `authorized_keys` Google Doc
 
-1.  Create a new [Google Doc](https://docs.google.com/document).
+1.  Create a [new Google Doc](https://docs.new).
 
 2.  Add the `authorized_keys` contents, e.g.:
 
@@ -24,29 +24,22 @@ Probably most appropriate in a deployment with a small numbers of users and serv
 
 ## Per-machine bringup
 
-### Create a non-root user with passwordless `sudo`
+Assuming we'll be logging on as the user `sphinx`.
 
-1.  Create the passwordless `sudo` group
+### Create the login user
 
-    ```bash
-    groupadd sudo-nopasswd
-    ```
-
-2.  Give the group `sudo` permission
-
-    Write to `/etc/sudoers.d/sudo-nopasswd`:
-
-    ```
-    # Allow users in the sudo-nopasswd group to run any command without
-    # being prompted for a password.
-    %sudo-nopasswd ALL=(ALL) NOPASSWD:ALL
-    ```
-
-3.  Create a user in the group
+1.  Create the user with a home directory
 
     ```bash
-    useradd "${NEW_USER}" --shell /bin/bash --create-home
-    usermod "${NEW_USER}" --append --groups sudo-nopasswd
+    useradd sphinx --shell /bin/bash --create-home
+    ```
+
+2.  Give the user passwordless `sudo` privilege
+
+    Create `/etc/sudoers.d/sphinx-passwordless-sudo` containing:
+
+    ```
+    sphinx ALL=(ALL) NOPASSWD:ALL
     ```
 
 ### Install `authorized_keys` script
@@ -56,13 +49,13 @@ Probably most appropriate in a deployment with a small numbers of users and serv
     ```bash
     curl -L "${URL_FOR_SCRIPT}" -o /usr/local/download_authorized_keys
 
-    # The script must be owned and only writable by root.
+    # The script must be owned by, and only writable by, root.
     chmod 755 /usr/local/download_authorized_keys
     ```
 
 2.  Configure the script
 
-    In `download_authorized_keys`, replace `GOOGLE_DOC_ID` with the ID of the document you created. For example, if the document URL is:
+    In `download_authorized_keys`, set `GOOGLE_DOC_ID` to the ID of the document you created. For example, if the document URL is:
     ```
     https://docs.google.com/document/d/4oVJ6K5g2LOhqlgrblto5WYTasVebsPJGbsHSmVXNyQe/edit
     ```
@@ -75,40 +68,28 @@ Probably most appropriate in a deployment with a small numbers of users and serv
 3.  Create a user to run the script
 
     ```bash
-    # Add a system user (and associated group) with no login privilege.
-    useradd authorized_keys_command_user --system --shell /bin/false --user-group
+    # Add a system user with no login privilege.
+    useradd authorized_keys_command_user --system --shell /bin/false
     ```
 
-4.  Configure `sshd` to use the script
+### Configure `sshd`
 
-    Add to `/etc/ssh/sshd_config`:
+We're going to require `publickey` authentication for all users and let `sphinx` log in with keys from the Google doc.
 
-    ```
-    # Tokens:
-    #   %f - the fingerprint of the key or certificate
-    #   %u - the username
-    #   %h - the home directory of the user
-    #   %k - the base64-encoded key or certificate for authentication
-    #   %t - the key or certificate type 
-    AuthorizedKeysCommand /usr/local/download_authorized_keys "%f" "%u" "%h" "%k" "%t"
-
-    # AuthorizedKeyCommandUser is required if AuthorizedKeyCommand is set.
-    AuthorizedKeysCommandUser authorized_keys_command_user
-    ```
-
-    _(Consider keeping `sshd_config` open for the next step.)_
-
-### Configure `sshd` to use `publickey` authentication
-
-Add to `/etc/ssh/sshd_config`:
+Add to the end of `/etc/ssh/sshd_config`:
 
 ```
-AuthenticationMethods publickey
-ChallengeResponseAuthentication no
-PasswordAuthentication no
+Match all
+  AuthenticationMethods publickey
 
-PermitRootLogin prohibit-password
+Match User sphinx
+  AuthorizedKeysCommand /usr/local/download_authorized_keys
+  AuthorizedKeysCommandUser authorized_keys_command_user
 ```
+
+We use `Match` blocks as an easy way to override values that might be set earlier in the file. That breaks if there are already `Match` blocks, but there usually aren't.
+
+If we set `AuthorizedKeysCommand` but not `AuthorizedKeysCommandUser`, `sshd` will reject the config and fail to start.
 
 ### Read new `sshd` configuration
 
@@ -121,10 +102,10 @@ service ssh restart
 # Check that sshd_config was read successfully
 service ssh status
 
-# ... also test logging in as ${NEW_USER}.
+# ... also test logging in as sphinx.
 ```
 
-### Debugging
+## Debugging
 
 If `AuthorizedKeysCommand` is not respected, check permissions on `/usr/local` and perhaps fix them with `chmod 755 /usr/local`. If the permissions are wrong, you'll see lines like this in `/var/log/auth.log`:
 
