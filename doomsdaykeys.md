@@ -42,7 +42,7 @@ Yubikeys support RSA and ECC options for `--algorithm`. We choose `ECCP256` for 
 
 These steps also require the Yubico PIV tool, referenced above.
 
-### On Mac
+### Mac
 
 ```bash
 ssh-keygen -D ${PIVTOOLDIR}/lib/libykcs11.dylib
@@ -50,7 +50,7 @@ ssh-keygen -D ${PIVTOOLDIR}/lib/libykcs11.dylib
 
 This will print two lines. The one we want starts with `ecdsa-sha2-nistp256` and ends with "Public key for PIV Authentication".
 
-### On Windows
+### Windows
 
 (really: half Windows, half Windows Subsystem for Linux -- where the USB device is only accessible to Windows)
 
@@ -70,7 +70,7 @@ Put the doomsday keys in `~/.ssh/authorized_keys` for the user they should autho
 
 ## Authenticating with PIV
 
-### On Mac
+### Mac
 
 Pass the PKCS#11 provider to `ssh` and provide the PIN when requested.
 
@@ -78,9 +78,18 @@ Pass the PKCS#11 provider to `ssh` and provide the PIN when requested.
 ssh -I ${PIVTOOLDIR}/lib/libykcs11.dylib user@host
 ```
 
-### On Windows
+### Windows
 
-Use [PuTTY-CAC](https://github.com/NoMoreFood/putty-cac/releases). Point it to `libykcs11.dll` from the Yubico PIV tool distribution.
+Use [PuTTY-CAC](https://github.com/NoMoreFood/putty-cac/releases).
+
+1. Go to the "Connection > SSH > Certificate" page
+2. Make sure "Attempt certificate authentication" is checked
+3. Click "Set PKCS Cert..."
+4. Choose `bin\libykcs11.dll` from the Yubico PIV tool installation. You may need to change the file extension filter for it to appear.
+5. The Windows "Select Certificate" dialog will appear. Choose the certificate with the right subject name. In particular, _avoid_ certificates named "Yubico PIV Attestation".
+6. Configure other parameters as normal and connect.
+
+It might also be possible to use [OpenSSH for Windows](https://github.com/PowerShell/Win32-OpenSSH/releases) with the Yubico PIV tool DLL. See e.g. [this comment](https://github.com/Yubico/yubico-piv-tool/issues/223#issuecomment-582020539).
 
 ## Checking the right key is being used
 
