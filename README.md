@@ -42,6 +42,8 @@ Assuming we'll be logging on as the user `sphinx`.
     sphinx ALL=(ALL) NOPASSWD:ALL
     ```
 
+    See [this page](sudoers.md) for more details on this line.
+
 ### Install `authorized_keys` script
 
 1.  Download the script
@@ -122,3 +124,5 @@ If you rely entirely on `AuthorizedKeysCommand` to download `authorized_keys` fr
 - Google changes the URL scheme for exporting documents as text
 
 To account for this, you may want to create a "fallback" key and put it in `authorized_keys` on each host. This key should probably stay offline or be rooted at a Yubikey since it will be so hard to revoke.
+
+See the page on [Doomsday Keys](doomsdaykeys.md) for one strategy for keeping backup credentials.

@@ -1,13 +1,13 @@
 # Passwordless `sudo`
 
-To allow a user named `sandwich` to run commands as `root` using `sudo` without being prompted for their password, add this snippet to `/etc/sudoers` or to a file in `/etc/sudoers.d/`:
+To allow a user named `sphinx` to run commands as `root` using `sudo` without being prompted for their password, add this snippet to `/etc/sudoers` or to a file in `/etc/sudoers.d/`:
 
 ```
-sandwich ALL=(ALL) NOPASSWD:ALL
+sphinx ALL=(ALL) NOPASSWD:ALL
 ```
 
 Interpreting the line left to right, this means:
-- the user `sandwich`
+- the user `sphinx`
 - whatever the identity of the current host
 - can run, as any user
 - without being prompted for their password
