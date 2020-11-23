@@ -1,0 +1,54 @@
+#!/bin/bash
+
+set -o nounset -o errexit -o pipefail
+
+# Avoid differences in `sort` behavior
+export LC_ALL=C
+
+show_config() {
+  # current user has passwordless sudo
+  # `--non-interactive` to fail if prompt is necessary
+  # `--reset-timestamp` to avoid using any lingering (maybe password) permission
+  sudo --non-interactive --reset-timestamp id
+
+  # passwordless sudo works for users other than root
+  sudo --non-interactive --reset-timestamp -u nobody id
+
+  # /usr/local directory exists with correct permissions
+  stat -c '%U %G %a' /usr/local
+
+  # /usr/local/download_authorized_keys script exists with correct permissions
+  stat -c '%U %G %a' /usr/local/download_authorized_keys
+
+  # download_authorized_keys script retrieves a correct document
+  # this guid is in the authorized_keys doc as a sentinel
+  /usr/local/download_authorized_keys | grep --only-matching 'f9c15e28-fefb-45e4-ae25-89131d618a4c'
+
+  # authorized_keys_command_user user exists with shell /bin/false
+  # ignore fields 3 (uid) and 4 (gid) since they can vary
+  getent passwd authorized_keys_command_user | cut -d':' -f -2,5-
+
+  # sshd requires pubkey authentication
+  # run as root because `sshd` expects to be able to read host keys
+  sudo sshd -T 2>/dev/null | egrep '^(authenticationmethods) '
+
+  # Authorized keys command is properly configured for current user
+  sudo sshd -T -C "user=${USER},host=random-host-enoosh6e.com,addr=8.8.8.8" | egrep '^(authorizedkeyscommand|authorizedkeyscommanduser) ' | sort
+
+  # Doomsday keys are configured for current user
+  sort ~/.ssh/authorized_keys
+
+  # Script finished, all commands succeeded
+  echo end
+}
+
+if [[ -z "${1+set}" ]]; then
+  # no argument, just show config
+  show_config
+elif [[ "${1}" = "hash" ]]; then
+  # show sha256 hash of config
+  show_config | shasum -a256 | cut --delimiter=' ' --fields=1
+else
+  >&2 echo Invalid option: \'"${1}"\'
+  exit 1
+fi
