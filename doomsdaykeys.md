@@ -80,7 +80,7 @@ ssh -I ${PIVTOOLDIR}/lib/libykcs11.dylib user@host
 
 ### Windows
 
-Use [PuTTY-CAC](https://github.com/NoMoreFood/putty-cac/releases).
+Use [PuTTY CAC](https://github.com/NoMoreFood/putty-cac/releases).
 
 1. Go to the "Connection > SSH > Certificate" page
 2. Make sure "Attempt certificate authentication" is checked
