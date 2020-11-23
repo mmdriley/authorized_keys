@@ -22,7 +22,7 @@ Smartcard-rooted SSH credentials are harder to set up and use, but are compatibl
 
 First, make sure the Yubikey's smartcard PIN is set. You can use the Yubikey manager for this. Remember the default PIN is `123456`.
 
-Next, get the `yubico-piv-tool`. At time of writing it was available [here](https://www.yubico.com/products/services-software/download/smart-card-drivers-tools/).
+Next, [get the `yubico-piv-tool`](https://developers.yubico.com/yubico-piv-tool/Releases/).
 
 Use this command to generate, self-sign, and import an ECDH certificate:
 
@@ -36,16 +36,31 @@ The validity interval (`--valid-days`) **does not** affect use of the key. We us
 
 The certificate subject (`--subject`) is likewise not relevant to use of the key.
 
-Yubikeys support RSA and ECC options for `--algorithm`. We choose `ECCP256` for good security with small keys.
+Yubikeys support RSA and ECC options for `--algorithm`. We choose `ECCP256` for good security with small keys. This choice _may_ introduce some compatibility constraints, as e.g. not all PKCS#11 libraries support elliptic curves.
 
 ## Getting the SSH public key
 
-Use `yubico-piv-tool` to export the certificate, `openssl` to get certificate public key, and `ssh-keygen` to reformat it for use in `authorized_keys`:
+These steps also require the Yubico PIV tool, referenced above.
+
+### On Mac
 
 ```bash
-yubico-piv-tool.exe --slot 9a --action read-cert | \
-    openssl x509 -inform PEM -noout -pubkey | \
-    ssh-keygen -i -m pkcs8 -f /dev/stdin
+ssh-keygen -D ${PIVTOOLDIR}/lib/libykcs11.dylib
+```
+
+This will print two lines. The one we want starts with `ecdsa-sha2-nistp256` and ends with "Public key for PIV Authentication".
+
+### On Windows
+
+(really: half Windows, half Windows Subsystem for Linux -- where the USB device is only accessible to Windows)
+
+Use `yubico-piv-tool` to export the certificate, then use `openssl` to get certificate public key and `ssh-keygen` to reformat it for use in `authorized_keys`:
+
+```bash
+yubico-piv-tool.exe --slot 9a --action read-cert
+
+# then paste that into ...
+openssl x509 -inform PEM -noout -pubkey | ssh-keygen -i -m pkcs8 -f /dev/stdin
 # prints "ecdsa-sha2-nistp256 AAAAE2V..."
 ```
 
@@ -55,15 +70,17 @@ Put the doomsday keys in `~/.ssh/authorized_keys` for the user they should autho
 
 ## Authenticating with PIV
 
-[This page](https://piv.idmanagement.gov/engineering/ssh/) from the US General Services Administration is a great collection of resources for authenticating with PIV over SSH on Windows and Mac.
+### On Mac
 
-On Mac, add the key to `ssh-agent`:
+Pass the PKCS#11 provider to `ssh` and provide the PIN when requested.
 
 ```bash
-ssh-add -s /usr/lib/ssh-keychain.dylib
+ssh -I ${PIVTOOLDIR}/lib/libykcs11.dylib user@host
 ```
 
-On Windows, use [PuTTY-CAC](https://github.com/NoMoreFood/putty-cac/releases).
+### On Windows
+
+Use [PuTTY-CAC](https://github.com/NoMoreFood/putty-cac/releases). Point it to `libykcs11.dll` from the Yubico PIV tool distribution.
 
 ## Checking the right key is being used
 
@@ -100,3 +117,4 @@ PLFBQDIxWZ4H1xQtYIUBUxlEyThFxHgv7DTMpWyjc+M=
 
 - [Yubico PIV introduction](https://developers.yubico.com/yubico-piv-tool/YubiKey_PIV_introduction.html) -- also describes default PIV parameters and setup steps
 - [`yubico-piv-tool` docs](https://developers.yubico.com/yubico-piv-tool/)
+- [SSH authentication with PIV](https://piv.idmanagement.gov/engineering/ssh/) -- from US Government
