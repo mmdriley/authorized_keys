@@ -126,3 +126,8 @@ If you rely entirely on `AuthorizedKeysCommand` to download `authorized_keys` fr
 To account for this, you may want to create a "fallback" key and put it in `authorized_keys` on each host. This key should probably stay offline or be rooted at a Yubikey since it will be so hard to revoke.
 
 See the page on [Doomsday Keys](doomsdaykeys.md) for one strategy for keeping backup credentials.
+
+## References
+
+- [`sshd_config(5)`](https://man.openbsd.org/sshd_config)
+- Baseline/default `sshd_config`: [upstream](https://github.com/openssh/openssh-portable/blob/master/sshd_config), [Debian](https://salsa.debian.org/ssh-team/openssh/-/blob/master/sshd_config), [Ubuntu](https://git.launchpad.net/ubuntu/+source/openssh/tree/sshd_config?h=applied/ubuntu/devel)
