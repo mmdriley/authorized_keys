@@ -42,7 +42,7 @@ Assuming we'll be logging on as the user `sphinx`.
     sphinx ALL=(ALL) NOPASSWD:ALL
     ```
 
-    See [this page](sudoers.md) for more details on this line.
+    This line is explained in more detail [here](sudoers.md).
 
 ### Install `authorized_keys` script
 
