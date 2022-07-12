@@ -78,6 +78,31 @@ Assuming we'll be logging on as the user `sphinx`.
 
 We're going to require `publickey` authentication for all users and let `sphinx` log in with keys from the Google doc.
 
+If we set `AuthorizedKeysCommand` but not `AuthorizedKeysCommandUser`, `sshd` will reject the config and fail to start.
+
+#### Recent Debian+derivatives: `sshd_config.d`
+
+Debian (since `bullseye`) has [included this line](https://salsa.debian.org/ssh-team/openssh/-/blob/debian/1%258.4p1-5+deb11u1/sshd_config#L13) in `sshd_config`:
+
+```
+Include /etc/ssh/sshd_config.d/*.conf
+```
+
+so we can create `/etc/ssh/sshd_config.d/authorized_keys.conf`:
+
+```
+AuthenticationMethods publickey
+
+AuthorizedKeysCommand /usr/local/download_authorized_keys
+AuthorizedKeysCommandUser authorized_keys_command_user
+```
+
+Putting settings outside `sshd_config` helps prevent merge conflicts on upgrade.
+
+We might be tempted to guard these with `Match User`, but OpenSSH before 8.4 has a [problem](https://bugzilla.mindrot.org/show_bug.cgi?id=3122) using `Match` inside included files.
+
+#### Otherwise: `sshd_config`
+
 Add to the end of `/etc/ssh/sshd_config`:
 
 ```
@@ -90,28 +115,6 @@ Match User sphinx
 ```
 
 We use `Match` blocks as an easy way to override values that might be set earlier in the file. That breaks if there are already `Match` blocks, but there usually aren't.
-
-If we set `AuthorizedKeysCommand` but not `AuthorizedKeysCommandUser`, `sshd` will reject the config and fail to start.
-
-#### Newer distros: `sshd_config.d`
-
-Newer versions of OpenSSH include this line in `sshd_config`:
-
-```
-Include /etc/ssh/sshd_config.d/*.conf
-```
-
-so we can create `/etc/ssh/sshd_config.d/authorized_keys.conf`:
-
-```
-AuthenticationMethods publickey
-
-# Don't guard this with "Match User" even though we might want to.
-# OpenSSH before 8.4 has a problem using "Match" inside included files.
-# https://bugzilla.mindrot.org/show_bug.cgi?id=3122
-AuthorizedKeysCommand /usr/local/download_authorized_keys
-AuthorizedKeysCommandUser authorized_keys_command_user
-```
 
 ### Read new `sshd` configuration
 
